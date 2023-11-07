@@ -1,5 +1,10 @@
-(ns aes
+(ns aes-timing-attack.aes
   (:require [buddy.core.codecs :as codecs]))
+
+(defn bar
+    "I don't do a whole lot."
+  [x]
+  (println x "Hello, Mars!"))
 
 (defn bytes->hex [bs]
   (codecs/bytes->hex bs))
@@ -94,15 +99,6 @@
    (fn[b]
      (get sbox (unsigned b)))
    word))
-
-;;(defn gmul [a ^byte b ^byte]
-  ;; let [ p (byte 0)]
-  ;; (reduce
-  ;;  (fn [acc _]
-  ;;    (if (not (== 0 ) (bit-and b 1 ))
-       
-  ;;    )
-  ;;  (range 0 8)) ;; iterate 8 times
 
 (defn round-const-schedule []
   "the aes key-schedule round constant for round i
