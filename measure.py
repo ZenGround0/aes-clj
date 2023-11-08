@@ -62,8 +62,8 @@ def sweep(n):
             print(i)
         ptext = random_plaintext()
         inner_time, outer_time = time_aes_plaintext(ptext)
-        if inner_time > 2:
-            print("time: {0}, i: {1}, ptext: {2}, output: {3}".format(encrypt_time, i, ptext, ciphertext))
+        if inner_time > 3000:
+            print("time: {0}, i: {1}, ptext: {2}".format(inner_time, i, ptext))
         tally(ptext, inner_time, times, counts)
 
     return normalize_times(times, counts), counts
@@ -101,6 +101,8 @@ def explore(n, m):
             print(i)
         for ptext in ptexts:
             t, _ = time_aes_plaintext(ptext)
+            if t > 3000:
+                continue
             if not ptext in dists:
                 dists[ptext] = []
             dists[ptext].append(t)
@@ -119,7 +121,9 @@ def compare(m, ptext1, ptext2):
             print(i)
         for ptext in ptexts:
             t, _ = time_aes_plaintext(ptext)
-            # filter outliers, likely JVM artifact
+            # filter outliers, (for clojure likely JVM artifact)
+            if t > 3000:
+                continue
             if not ptext in dists:
                 dists[ptext] = []
             dists[ptext].append(t)
@@ -134,9 +138,9 @@ def compare(m, ptext1, ptext2):
 
     
 if __name__ == "__main__":
-#    explore(20, 10000)
-    compare(200, "0b474a7d75289451531748dc1a221ff9", "d93f6152518ddec1d05c2a83e679340e")
-#   timing, counts = sweep(100000)
+    explore(10, 500)
+#    compare(2000, "0b474a7d75289451531748dc1a221ff9", "d93f6152518ddec1d05c2a83e679340e")
+#    timing, counts = sweep(10000)
 #    save(timing, counts)
 #    infinite_encrypt("440ed4556d87501082ab5285c33960c0")
 

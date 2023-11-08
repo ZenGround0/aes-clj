@@ -26,7 +26,6 @@ func aesEnc(hexPtext string) ([]byte, time.Duration) {
 	start := time.Now()
 	encryptBlockGo(enc, src, src)
 	duration := time.Since(start)
-	fmt.Printf("%v\n", duration)
 	return src, duration
 }
 
