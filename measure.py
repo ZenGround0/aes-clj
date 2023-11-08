@@ -17,7 +17,7 @@ def send_aes_plaintext(plaintext, url):
     # Return the output from the response body
     return response.text, end - start
 
-def time_aes_plaintext(ptext, url="http://localhost:3042/encrypt"):
+def time_aes_plaintext(ptext, url="http://localhost:8080/hex"):
     resp, outer_time = send_aes_plaintext(ptext, url)
     return extract_time(resp), outer_time
 
@@ -49,7 +49,8 @@ def tally(ptext, encrypt_time, times, counts):
         counts[i][b] = cnt + 1
 
 def extract_time(s):
-    m = re.match('"Elapsed time: (.*) msecs"', s)
+    print(s)
+    m = re.match('"Elapsed time: (.*) ns"', s)
     return float(m.group(1))
         
 def sweep(n):
@@ -119,8 +120,6 @@ def compare(m, ptext1, ptext2):
         for ptext in ptexts:
             t, _ = time_aes_plaintext(ptext)
             # filter outliers, likely JVM artifact
-            if t > 2: 
-                continue 
             if not ptext in dists:
                 dists[ptext] = []
             dists[ptext].append(t)
@@ -136,7 +135,7 @@ def compare(m, ptext1, ptext2):
     
 if __name__ == "__main__":
 #    explore(20, 10000)
-    compare(1000, "0b474a7d75289451531748dc1a221ff9", "d93f6152518ddec1d05c2a83e679340e")
+    compare(200, "0b474a7d75289451531748dc1a221ff9", "d93f6152518ddec1d05c2a83e679340e")
 #   timing, counts = sweep(100000)
 #    save(timing, counts)
 #    infinite_encrypt("440ed4556d87501082ab5285c33960c0")
