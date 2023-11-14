@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"time"
+	//	"time"
 	cacheclear "github.com/zenground0/aes-clj/aes-go/cacheclear"
 )
 
@@ -17,37 +17,37 @@ func main() {
 	// setup thing and warm cache
 	thing := new(Thing)
 	thing.a, thing.b, thing.c = 5, 600000, [4]byte{0xca, 0xfe, 0xac, 0xe0}
-	start := time.Now()
+	start := cacheclear.Cputicks()
 	copy := *thing
-	duration := time.Since(start)
+	duration := cacheclear.Cputicks() - start
 	copy.a = copy.b + 1
 	fmt.Printf("warm up cache: %d\n", duration)
 
 	// measure time to retrieve cached thing
-	start = time.Now()
+	start = cacheclear.Cputicks()
 	quick := *thing
-	duration = time.Since(start)
+	duration = cacheclear.Cputicks() - start
 	quick.a += quick.b
 	fmt.Printf("cached mem load: %d\n", duration)
 
 	cacheclear.ClearL1()
-	start = time.Now()
+	start = cacheclear.Cputicks()	
 	slow := *thing
-	duration = time.Since(start)
+	duration = cacheclear.Cputicks() - start	
 	slow.b += slow.a
 	fmt.Printf("L1 cache miss mem load: %d\n", duration)
 
 	cacheclear.ClearL2()
-	start = time.Now()
+	start = cacheclear.Cputicks()	
 	slower := *thing
-	duration = time.Since(start)
+	duration = cacheclear.Cputicks() - start	
 	slower.a += slower.b
 	fmt.Printf("L2 cache miss mem load: %d\n", duration)
 	
 	cacheclear.ClearL3()
-	start = time.Now()
+	start = cacheclear.Cputicks()	
 	slowest := *thing
-	duration = time.Since(start)
+	duration = cacheclear.Cputicks() - start	
 	slowest.a += slower.b +6
 	fmt.Printf("L3 cache miss mem load: %d\n", duration)
 

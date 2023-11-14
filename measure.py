@@ -21,6 +21,10 @@ def time_aes_plaintext(ptext, url="http://localhost:8080/hex"):
     resp, outer_time = send_aes_plaintext(ptext, url)
     return extract_time(resp), outer_time
 
+def time_aes_get_ctext(ptext, url="http://localhost:8080/hex"):
+    resp, outer_time = send_aes_plaintext(ptext, url)
+    return extract_ctext(resp), extract_time(resp), outer_time
+
 ## return a random 16 byte plaintext
 def random_plaintext():
     return random.getrandbits(128).to_bytes(16, 'little').hex()
@@ -50,10 +54,14 @@ def tally(ptext, encrypt_time, times, counts):
 
 def extract_time(s):
     print(s)
-    m = re.match('"Elapsed time: (.*) ns"', s)
+    m = re.match('".*Elapsed time: (.*) cputicks"', s)
     return float(m.group(1))
+
+def extract_ctext(s):
+    m = re.match('"Ciphertext: (.*),.*"', s)
+    return m.group(1)
         
-def sweep(n):
+def sweep_tally_time(n):
     times = [[0 for x in range(256)] for y in range(16)]
     counts = [[0 for x in range(256)] for y in range(16)]
 
@@ -112,6 +120,58 @@ def explore(n, m):
         print("{0}: {1}, ks test: {2}".format(ptext, scipy.stats.describe(data), scipy.stats.ks_2samp(data, tester, alternative='two-sided', mode='auto').pvalue))
 
 
+def sweep_score_ctext(n, lastkeyhex):
+    '''
+    Sweep random plaintexts, score output ciphertexts by count of Sbox duplicate hits.
+    Sbox duplicate hits are measured by checking if ciphertext byte combinations include
+    any lastkeyhex ciphertext byte combinations.  lastkeyhex is the last 4 words of the expanded
+    round key bytes -- this function is validating against a known key.
+
+    Sbox duplicates necessitate a cache hit when doing the final Sbox lookup in the T table
+    implementation and therefore higher ciphertext score should roughly correlate to lower time.
+    Noise comes from cache timing noise + the existence of cache hits unseen by duplicate
+    Sbox hits -- ~8-16 Sbox entries are loaded in a cache line and will be hit without duplication
+    '''
+    lastkey_combinations = set(byte_combinations(lastkeyhex))
+    scores = {}
+    for i in range(n):
+        ptext = random_plaintext()
+        print(ptext)
+        ctext, inner_time, outer_time = time_aes_get_ctext(ptext)
+        # Filter outliers -- usually runtime artifacts
+        if inner_time > 5000:
+            print("time: {0}, i: {1}, ptext: {2}".format(inner_time, i, ptext))
+            continue
+        score = score_ctext(ctext, lastkey_combinations)
+        if score not in scores:
+            scores[score] = []
+        scores[score].append(inner_time)
+    tester = None
+    for score in scores:
+        data = scores[score]
+        if tester is None:
+            tester = data        
+        print("score {0}: {1}, ks test: {2}".format(score, scipy.stats.describe(data), scipy.stats.ks_2samp(data, tester, alternative='two-sided', mode='auto').pvalue))
+        
+        
+def score_ctext(ctexthex, match_set):
+    score = 0
+    ctext_combos = byte_combinations(ctexthex)
+    for c in ctext_combos:
+        if c in match_set:
+            score += 1
+    return score
+
+def byte_combinations(hexstr):
+    '''
+    Return the set of the xor of each input byte with each other input byte
+    excluding same bytes and repeats
+    '''
+    bs = enumerate(bytes.fromhex(hexstr))
+    return [a ^ b for (i,a) in bs for (j, b) in bs if i < j]
+
+
+        
 def compare(m, ptext1, ptext2):
     dists = {}
     ptexts = [ptext1, ptext2]
@@ -133,14 +193,12 @@ def compare(m, ptext1, ptext2):
         print("{0}: {1}, ks test: {2}".format(ptext, scipy.stats.describe(data), scipy.stats.ks_2samp(data, tester, alternative='two-sided', mode='auto').pvalue))
         plt.hist(data)
 
-
-    
-
     
 if __name__ == "__main__":
-    explore(10, 500)
+    sweep_score_ctext(10000, "13111d7fe3944a17f307a78b4d2b30c5")
+#    explore(10, 500)
 #    compare(2000, "0b474a7d75289451531748dc1a221ff9", "d93f6152518ddec1d05c2a83e679340e")
-#    timing, counts = sweep(10000)
+#    timing, counts = sweep_tally_time(10000)
 #    save(timing, counts)
 #    infinite_encrypt("440ed4556d87501082ab5285c33960c0")
 
